@@ -2,6 +2,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <sys/wait.h>
+#include <fcntl.h>
 
 int main(void) {
     while (1){
@@ -14,6 +15,67 @@ int main(void) {
     if (strcmp(buff, "exit") == 0){ 
         break;
     }
+
+    // < = read from,
+    if (strchr(buff, '<') != NULL){ 
+        char *cmd = strtok(buff, "<");
+        char *filename = strtok(NULL, "<");
+        char *args3[20];
+        int y = 0;
+        char *token3 = strtok(cmd, " ");
+
+        while(token3 != NULL){ 
+            args3[y] = token3;
+            y++; 
+            token3 = strtok(NULL, " ");
+        }
+        args3[y] = NULL;    
+        filename = strtok(filename, " ");
+
+        pid_t pid3 = fork();
+
+        if (pid3 == 0){ 
+            int fd = open(filename, O_RDONLY);
+            dup2(fd, STDIN_FILENO);
+            close(fd);
+            execvp(args3[0], args3);
+        } else { 
+            wait(NULL);
+        }
+        continue;
+    }  
+
+       // > = Write to
+       if (strchr(buff, '>')!= NULL){ 
+        char *cmd4 = strtok(buff, ">");
+        char *filename1 = strtok(NULL, ">");
+        filename1 = strtok(filename1 , " ");
+        char *args4[20];
+        int w = 0;
+        char *token4 = strtok(cmd4, " ");
+
+        while(token4 != NULL){ 
+            args4[w] = token4;
+            w++;
+            token4 = strtok(NULL, " ");
+        }
+        args4[w] = NULL;
+
+        pid_t pid4 = fork();
+
+        if (pid4 == 0){ 
+            int fd1 = open(filename1, O_WRONLY | O_CREAT | O_TRUNC, 0644); // 0644 = 6: owner, 4: group (read only). Std permission for a regular file. Unix Permission system
+            dup2(fd1, STDOUT_FILENO);
+            close(fd1);
+            execvp(args4[0], args4);
+        } else{ 
+            wait(NULL);
+        }
+    
+         continue;
+       } 
+
+   
 
      // Pipe check for 2 concatenated commands
     if (strchr(buff, '|') != NULL){          // Check strings for a '|'. 
@@ -72,7 +134,7 @@ int main(void) {
 
     char *args[20]; // safeguarding it against more than 20 words in a single line of input
     int i = 0; // slots for parsing
-    char *token = strtok(buff, " "); // Token points strtok to where the word is in the buff and " " explains it to skip whitespaces
+    char *token = strtok(buff, " "); // Token points strtok to where the word is in the buff and explains it to skip whitespaces ( " ")
 
     while (token != NULL){
         args[i] = token;
@@ -92,7 +154,6 @@ int main(void) {
     } else { 
         wait(NULL);
     }
-
 
 }
     

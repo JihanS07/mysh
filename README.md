@@ -1,38 +1,41 @@
 # mysh
 
-A shell written in C from scratch. Built to understand how shells actually work under the hood: process creation, pipes, file descriptors, all of it.
+A Unix shell implementation written in C from scratch.
 
-## What it does
+## Features
 
-- Reads commands and runs them using `fork()` and `execvp()`
-- Supports piping between two commands (like `ls | grep txt`)
-- Handles `cd` as a builtin (since child processes can't change the parent's directory)
+- Command execution via `fork()` and `execvp()`
+- Single pipe support (`ls | grep txt`)
+- Input redirection (`sort < file.txt`)
+- Output redirection (`ls > out.txt`)
+- Built-in `cd` command
 - `exit` to quit
 
-## Building
+## Build
 
 ```
 make
 ```
 
-This compiles with `-Wall -Werror -Wextra` because strict warnings keep you honest.
+Compiles with `-Wall -Werror -Wextra -std=c11`.
 
-## Running
-
-```
-make run
-```
-
-or just
+## Usage
 
 ```
 ./mysh
 ```
 
+```
+Enter a Command: ls -la
+Enter a Command: cat main.c | grep include
+Enter a Command: sort < names.txt
+Enter a Command: ls > output.txt
+Enter a Command: cd src
+Enter a Command: exit
+```
+
 ## How it works
 
-The main loop reads input, tokenizes it, and checks for pipes. If there's a pipe, it forks two children and connects them with `pipe()` and `dup2()`. Otherwise it forks once and execs the command. The parent waits for children to finish before prompting again.
+The shell runs a read-eval loop that tokenizes input and checks for operators (`<`, `>`, `|`). Based on what it finds, it configures the appropriate file descriptors with `open()`, `pipe()`, and `dup2()`, then forks child processes to run the commands. The parent waits for all children before prompting again.
 
-## Status
-
-Still a work in progress. More features coming as I keep learning.
+`cd` is handled in the parent process directly since forked children can't modify the parent's working directory.
